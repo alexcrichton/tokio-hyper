@@ -18,7 +18,7 @@ pub use hyper::server::{Request as HyperRequest, Response as HyperResponse};
 use tokio::{NewService, Service};
 use hyper::{Control, Decoder, Encoder, HttpStream, Next};
 use hyper::server::{Server as HyperServer, Handler};
-use futures::{Future, Task};
+use futures::Future;
 use std::net::SocketAddr;
 use std::{io, thread};
 use std::sync::{Arc, Mutex};
@@ -122,11 +122,11 @@ impl<T> Handler<HttpStream> for ServerHandler<T>
                 let resp_fut = resp_fut.then(move |res| {
                     *dst.lock().unwrap() = Some(res);
                     ctrl.ready(Next::write()).unwrap();
-                    Ok(())
+                    Ok::<(), ()>(())
                 });
 
                 // Run the future
-                Task::new().run(Box::new(resp_fut));
+                resp_fut.forget();
 
                 return Next::wait()
             }
